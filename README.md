@@ -1,5 +1,7 @@
 # ZPA stream generator — realtime streaming to Elasticsearch
 
+Use this utility as the basis for Agentic Analyis of ZPA logs, for example to report on segmentation health and create dashboards in Kibana agentically. This is a great datafeed for demos where you need ZScaler logs.
+
 `zpa_stream_generator.py` emits synthetic Zscaler Private Access (ZPA) events
 **continuously, with live timestamps**, and bulk-indexes them into two
 Elasticsearch **data streams** as ECS-mapped documents.
