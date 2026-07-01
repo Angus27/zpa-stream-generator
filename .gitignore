@@ -1,0 +1,5 @@
+.env
+zpa_log_config.yaml
+__pycache__/
+*.pyc
+venv/

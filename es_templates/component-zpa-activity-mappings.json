@@ -1,0 +1,38 @@
+{
+  "template": {
+    "mappings": {
+      "properties": {
+        "destination": {
+          "properties": {
+            "domain": { "type": "keyword" },
+            "port":   { "type": "long" },
+            "bytes":  { "type": "long" }
+          }
+        },
+        "network": {
+          "properties": {
+            "transport": { "type": "keyword" },
+            "protocol":  { "type": "keyword" },
+            "bytes":     { "type": "long" }
+          }
+        },
+        "url": {
+          "properties": {
+            "domain": { "type": "keyword" }
+          }
+        },
+        "zpa": {
+          "properties": {
+            "application_segment": { "type": "keyword" },
+            "app_host":            { "type": "keyword" }
+          }
+        }
+      }
+    }
+  },
+  "_meta": {
+    "description": "Activity-specific field mappings for zpa-user-activity-logs",
+    "managed_by": "zpa_stream_generator"
+  },
+  "version": 1
+}

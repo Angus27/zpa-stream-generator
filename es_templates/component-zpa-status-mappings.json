@@ -1,0 +1,23 @@
+{
+  "template": {
+    "mappings": {
+      "properties": {
+        "zpa": {
+          "properties": {
+            "event_type": { "type": "keyword" },
+            "client": {
+              "properties": {
+                "version": { "type": "keyword" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "_meta": {
+    "description": "Status-specific field mappings for zpa-user-status-logs",
+    "managed_by": "zpa_stream_generator"
+  },
+  "version": 1
+}

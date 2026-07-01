@@ -1,0 +1,270 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ZPA Log Generator — Configuration File
+# ─────────────────────────────────────────────────────────────────────────────
+# All sections are optional; built-in defaults are used for any omitted value.
+# Run:  python zpa_log_generator.py --config zpa_log_config.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Elasticsearch streaming target ────────────────────────────────────────────
+# Used by zpa_stream_generator.py (the realtime streamer). The original
+# zpa_log_generator.py (batch CSV) ignores this section.
+elasticsearch:
+  endpoint: "https://localhost:9200"   # ES base URL.            Env override: ELASTIC_ENDPOINT
+  api_key:  null                        # base64 "id:api_key" from Kibana / _security/api_key.
+                                        # PREFER the env var:    ELASTIC_API_KEY
+  verify_certs: true                    # set false for self-signed dev clusters
+  ca_certs:     null                    # optional path to a CA bundle (.crt/.pem)
+  bulk_max_docs:          500           # flush the buffer once it holds this many docs
+  flush_interval_seconds: 2             # ...or once this many seconds have elapsed
+  request_timeout_seconds: 30
+  datastreams:
+    activity: "zpa-user-activity-logs"
+    status:   "zpa-user-status-logs"
+
+# ── Streaming behaviour ────────────────────────────────────────────────────────
+streaming:
+  reload_interval_seconds: 10           # how often the hot-reloaded files are re-read
+  rates_file: "zpa_rates.yaml"          # hot-reloaded rate/anomaly knobs
+  users_file: "zpa_users.yaml"          # hot-reloaded synthetic user pool
+  scenarios_file: "zpa_scenarios.yaml"  # hot-reloaded timed anomaly-spike scenarios
+  include_anomaly_fields: true          # false = BLIND run: drop the zpa.anomaly.* answer-key
+                                        # fields so an agent can't see the labels. Re-enable
+                                        # (or run a second stream) for grading. CLI: --no-anomaly-labels
+
+# ── Output (batch CSV generator only) ──────────────────────────────────────────
+output:
+  directory: "./zpa_logs"          # Where to write the CSV files
+  activity_filename: "zpa_user_activity_logs.csv"
+  status_filename:   "zpa_user_status_logs.csv"
+  encoding: "utf-8"
+
+# ── Time window ───────────────────────────────────────────────────────────────
+time_window:
+  start: "2025-03-01T00:00:00"     # ISO-8601, no timezone (UTC assumed)
+  end:   "2025-03-31T23:59:59"
+  timestamp_format: "%Y-%m-%dT%H:%M:%SZ"
+
+# ── Dataset size ──────────────────────────────────────────────────────────────
+dataset:
+  random_seed: 42                  # Set to null for a different run each time
+  user_count: 80                   # Number of synthetic users to generate
+
+  # Target event counts — generator will hit these approximately
+  activity_normal_events:   1400   # Normal authorised access sessions
+  activity_over_priv:        200   # Over-privileged access events
+  activity_cross_segment:    150   # Unexpected cross-segment events
+  activity_dormant:           50   # Hits against dormant segments
+  activity_denied:           100   # Policy-denied access attempts
+
+  # Status log padding target (lifecycle events padded up to this total)
+  status_target_total:       500
+
+  # Anomaly population sizes
+  over_privileged_user_count:  8   # How many users to mark as over-privileged
+  ghost_user_count:            4   # Users enrolled but never generating activity
+
+# ── Organisation ──────────────────────────────────────────────────────────────
+organisation:
+  name: "TelcoCorp"
+  internal_domain: "telco-corp.internal"
+  zpa_cloud: "zpa.telco-corp.net"
+  idp_provider: "AzureAD"
+
+  # Connector groups: name → list of IP addresses
+  connector_groups:
+    CG-HQ-LONDON:   ["10.10.1.50", "10.10.1.51"]
+    CG-NOC-SLOUGH:  ["10.20.1.50", "10.20.1.51"]
+    CG-OSS-READING: ["10.30.1.50", "10.30.1.51"]
+    CG-OT-BRISTOL:  ["10.40.1.50", "10.40.1.51"]
+    CG-DEV-LONDON:  ["10.50.1.50", "10.50.1.51"]
+    CG-SEC-LONDON:  ["10.60.1.50", "10.60.1.51"]
+    CG-DR-CARDIFF:  ["10.70.1.50", "10.70.1.51"]
+
+# ── Application segments ──────────────────────────────────────────────────────
+# Each segment entry:
+#   description:      human-readable label
+#   authorised_roles: list of role names that should have legitimate access
+#   connector_group:  which CG serves this segment
+#   app_prefix:       hostname prefix for synthetic app FQDNs
+#   ports:            list of destination ports to rotate through
+#   dormant:          true = segment is active in policy but has no real traffic
+segments:
+  SEG-CORP-INTRANET:
+    description: "Corporate intranet & collaboration"
+    authorised_roles: [all]          # special token — every role is authorised
+    connector_group: CG-HQ-LONDON
+    app_prefix: intranet
+    ports: [443, 8443, 80]
+    dormant: false
+
+  SEG-NOC-OPS:
+    description: "Network operations centre tooling"
+    authorised_roles: [noc_engineer, noc_manager]
+    connector_group: CG-NOC-SLOUGH
+    app_prefix: noc
+    ports: [443, 22, 8080, 9090]
+    dormant: false
+
+  SEG-OSS-BSS:
+    description: "OSS/BSS systems (billing, CRM)"
+    authorised_roles: [bss_analyst, oss_engineer, bss_manager]
+    connector_group: CG-OSS-READING
+    app_prefix: ossbss
+    ports: [443, 1521, 5432, 8080]
+    dormant: false
+
+  SEG-NETWORK-MGMT:
+    description: "Network device management (SNMP/SSH)"
+    authorised_roles: [noc_engineer, noc_manager, neteng]
+    connector_group: CG-NOC-SLOUGH
+    app_prefix: netmgmt
+    ports: [22, 161, 443, 830]
+    dormant: false
+
+  SEG-SCADA-OT:
+    description: "SCADA / OT control systems"
+    authorised_roles: [ot_engineer, ot_manager]
+    connector_group: CG-OT-BRISTOL
+    app_prefix: scada
+    ports: [102, 502, 4840, 443]
+    dormant: false
+
+  SEG-FINANCE-ERP:
+    description: "Finance ERP (SAP)"
+    authorised_roles: [finance_analyst, finance_manager, cfo]
+    connector_group: CG-HQ-LONDON
+    app_prefix: erp
+    ports: [443, 8443, 3200, 3300]
+    dormant: false
+
+  SEG-HR-SYSTEMS:
+    description: "HR & payroll systems"
+    authorised_roles: [hr_analyst, hr_manager, hrbp]
+    connector_group: CG-HQ-LONDON
+    app_prefix: hrsys
+    ports: [443, 8443]
+    dormant: false
+
+  SEG-DEVOPS-CI:
+    description: "DevOps / CI-CD pipelines"
+    authorised_roles: [devops_engineer, sre, dev_lead]
+    connector_group: CG-DEV-LONDON
+    app_prefix: cicd
+    ports: [443, 8080, 9000, 2222]
+    dormant: false
+
+  SEG-SECURITY-TOOLS:
+    description: "Security tooling (SIEM, vulnerability management)"
+    authorised_roles: [soc_analyst, soc_manager, ciso]
+    connector_group: CG-SEC-LONDON
+    app_prefix: sectool
+    ports: [443, 8443, 514, 6514]
+    dormant: false
+
+  SEG-LEGACY-BILLING:
+    description: "Legacy billing platform (COBOL)"
+    authorised_roles: [bss_analyst]
+    connector_group: CG-OSS-READING
+    app_prefix: legbill
+    ports: [3270, 23, 443]
+    dormant: true                  # ← DORMANT
+
+  SEG-DR-STANDBY:
+    description: "DR standby environment"
+    authorised_roles: [noc_manager, infra_manager]
+    connector_group: CG-DR-CARDIFF
+    app_prefix: dr
+    ports: [443, 22, 3389]
+    dormant: true                  # ← DORMANT
+
+  SEG-WHOLESALE-API:
+    description: "Wholesale partner API gateway"
+    authorised_roles: [wholesale_mgr, api_dev]
+    connector_group: CG-HQ-LONDON
+    app_prefix: wholesale
+    ports: [443, 8443]
+    dormant: true                  # ← DORMANT
+
+# ── Roles ─────────────────────────────────────────────────────────────────────
+# Each role entry:
+#   department:    organisational department label
+#   primary_segs:  segments this role legitimately accesses
+#                  (SEG-CORP-INTRANET is accessed by all via the [all] token above;
+#                   it does not need to be listed here unless you want it in
+#                   cross-segment detection scope)
+roles:
+  noc_engineer:    {department: NOC,       primary_segs: [SEG-CORP-INTRANET, SEG-NOC-OPS, SEG-NETWORK-MGMT]}
+  noc_manager:     {department: NOC,       primary_segs: [SEG-CORP-INTRANET, SEG-NOC-OPS, SEG-NETWORK-MGMT, SEG-DR-STANDBY]}
+  oss_engineer:    {department: OSS,       primary_segs: [SEG-CORP-INTRANET, SEG-OSS-BSS]}
+  bss_analyst:     {department: BSS,       primary_segs: [SEG-CORP-INTRANET, SEG-OSS-BSS]}
+  bss_manager:     {department: BSS,       primary_segs: [SEG-CORP-INTRANET, SEG-OSS-BSS, SEG-FINANCE-ERP]}
+  ot_engineer:     {department: OT,        primary_segs: [SEG-CORP-INTRANET, SEG-SCADA-OT]}
+  ot_manager:      {department: OT,        primary_segs: [SEG-CORP-INTRANET, SEG-SCADA-OT, SEG-NOC-OPS]}
+  finance_analyst: {department: Finance,   primary_segs: [SEG-CORP-INTRANET, SEG-FINANCE-ERP]}
+  finance_manager: {department: Finance,   primary_segs: [SEG-CORP-INTRANET, SEG-FINANCE-ERP, SEG-HR-SYSTEMS]}
+  hr_analyst:      {department: HR,        primary_segs: [SEG-CORP-INTRANET, SEG-HR-SYSTEMS]}
+  hr_manager:      {department: HR,        primary_segs: [SEG-CORP-INTRANET, SEG-HR-SYSTEMS, SEG-FINANCE-ERP]}
+  hrbp:            {department: HR,        primary_segs: [SEG-CORP-INTRANET, SEG-HR-SYSTEMS]}
+  devops_engineer: {department: DevOps,    primary_segs: [SEG-CORP-INTRANET, SEG-DEVOPS-CI]}
+  sre:             {department: DevOps,    primary_segs: [SEG-CORP-INTRANET, SEG-DEVOPS-CI, SEG-NOC-OPS]}
+  dev_lead:        {department: DevOps,    primary_segs: [SEG-CORP-INTRANET, SEG-DEVOPS-CI]}
+  soc_analyst:     {department: Security,  primary_segs: [SEG-CORP-INTRANET, SEG-SECURITY-TOOLS]}
+  soc_manager:     {department: Security,  primary_segs: [SEG-CORP-INTRANET, SEG-SECURITY-TOOLS, SEG-NOC-OPS]}
+  ciso:            {department: Security,  primary_segs: [SEG-CORP-INTRANET, SEG-SECURITY-TOOLS, SEG-FINANCE-ERP]}
+  infra_manager:   {department: Infra,     primary_segs: [SEG-CORP-INTRANET, SEG-NOC-OPS, SEG-NETWORK-MGMT, SEG-DR-STANDBY]}
+  wholesale_mgr:   {department: Commercial,primary_segs: [SEG-CORP-INTRANET, SEG-WHOLESALE-API]}
+  api_dev:         {department: Commercial,primary_segs: [SEG-CORP-INTRANET, SEG-WHOLESALE-API, SEG-DEVOPS-CI]}
+  cfo:             {department: Finance,   primary_segs: [SEG-CORP-INTRANET, SEG-FINANCE-ERP, SEG-HR-SYSTEMS]}
+
+# ── Cross-segment detection rules ────────────────────────────────────────────
+# Defines which role→segment combinations count as "unexpected cross-segment"
+# access (distinct from simple over-privilege which is just any out-of-role hit).
+cross_segment_rules:
+  - segment: SEG-SCADA-OT
+    unexpected_roles: [noc_engineer, devops_engineer, sre, bss_analyst]
+  - segment: SEG-FINANCE-ERP
+    unexpected_roles: [ot_engineer, noc_engineer, devops_engineer]
+  - segment: SEG-SECURITY-TOOLS
+    unexpected_roles: [bss_analyst, finance_analyst, ot_engineer]
+  - segment: SEG-NETWORK-MGMT
+    unexpected_roles: [bss_analyst, finance_analyst, hr_analyst]
+
+# ── User name pool ────────────────────────────────────────────────────────────
+# Add or remove names freely — the generator samples from these lists.
+user_names:
+  first: [James, Sarah, Mohammed, Priya, Tom, Aisha, David, Emma, Kofi, Lena,
+          Ravi, Claire, Stefan, Yemi, Andrew, Niamh, Oliver, Zara, Marcus, Fatima,
+          Chris, Helen, Arjun, Kate, Ryan, Blessing, Sean, Anna, Tariq, Mei]
+  last:  [Williams, Okafor, Patel, Chen, MacDonald, Hassan, Robertson, Kumar, Jones,
+          Brennan, Schmidt, Adeyemi, Lewis, Nkosi, Walsh, Sharma, Clarke, Ali,
+          Murphy, Thompson, Tan, O'Brien, Fernandez, Kowalski, Ahmed, Müller, Osei]
+
+# ── Session / traffic realism parameters ─────────────────────────────────────
+session:
+  duration_min_s:  5         # Shortest possible session (seconds)
+  duration_max_s:  3600      # Longest possible session (seconds)
+  bytes_tx_min:    1024
+  bytes_tx_max:    5242880   # 5 MB
+  bytes_rx_min:    512
+  bytes_rx_max:    2097152   # 2 MB
+  posture_fail_rate: 0.15    # Fraction of sessions that report a posture failure
+  apps_per_segment: 6        # Max synthetic app instances per segment
+
+# ── ZPA client parameters ─────────────────────────────────────────────────────
+client:
+  versions: ["4.1.0", "4.1.5", "4.2.0", "4.2.3", "4.3.1"]
+  os_platforms: ["Windows 11", "Windows 10", "macOS 14", "macOS 13"]
+  status_event_types:
+    - ZPA_CLIENT_CONNECTED
+    - ZPA_CLIENT_DISCONNECTED
+    - ZPA_AUTH_SUCCESS
+    - ZPA_AUTH_FAILURE
+    - ZPA_POSTURE_FAIL
+    - ZPA_TUNNEL_ESTABLISHED
+    - ZPA_TUNNEL_TORN_DOWN
+    - ZPA_IDP_TOKEN_REFRESH
+    - ZPA_CLIENT_IDLE_TIMEOUT
+  # Sampling weights aligned to the event_types list above
+  status_event_weights: [15, 15, 20, 2, 3, 12, 12, 10, 11]
+  status_events_per_user_min: 3
+  status_events_per_user_max: 12

@@ -1,0 +1,45 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ZPA Stream Generator — LIVE rates configuration
+# ─────────────────────────────────────────────────────────────────────────────
+# This file is HOT-RELOADED while the generator is running (default: every 10s,
+# see streaming.reload_interval_seconds in zpa_log_config.yaml).
+#
+# Edit a value, save the file, and the change takes effect within a few seconds
+# — no restart required. Safe to tune live while watching events land in Kibana.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Overall event generation rate ─────────────────────────────────────────────
+# Average events per minute for each data stream. Inter-arrival times are drawn
+# from an exponential distribution (Poisson process), so these are means, not
+# fixed cadences. Set to 0 to pause that stream entirely.
+event_rate:
+  activity_per_minute: 120      # zpa-user-activity-logs
+  status_per_minute:    30      # zpa-user-status-logs
+
+# ── Activity anomaly rates ─────────────────────────────────────────────────────
+# Probability that any single ACTIVITY event is of the given anomalous type.
+# These are independent draws; whatever is left over is normal authorised traffic.
+# Keep the total well under 1.0. Raise a value to make that anomaly fire more
+# often (e.g. to reliably trip a detection rule during a demo).
+activity_anomaly_rates:
+  over_privileged:  0.020       # user hits a segment outside their role
+  cross_segment:    0.010       # sensitive role -> segment crossing (cross_segment_rules)
+  dormant_segment:  0.004       # traffic to a segment marked dormant
+  access_denied:    0.015       # policy-denied access attempt
+
+# ── Status anomaly rates ───────────────────────────────────────────────────────
+# Probability that any single STATUS event is of the given anomalous type.
+status_anomaly_rates:
+  ghost_user:   0.010           # auth/token activity with no application sessions
+  auth_failure: 0.020           # ZPA_AUTH_FAILURE (raise for brute-force-style bursts)
+  posture_fail: 0.030           # ZPA_POSTURE_FAIL
+
+# ── Hybrid anomaly attribution ─────────────────────────────────────────────────
+# Anomalies are normally attributed to the FLAGGED user population
+# (behaviour flags in zpa_users.yaml) so a detection rule can catch a repeat
+# offender. This knob diverts a small, adjustable fraction of over_privileged
+# and ghost_user anomalies to a RANDOM non-flagged user instead, for occasional
+# unpredictable noise.
+#   0.0  = anomalies always come from flagged users only
+#   0.05 = ~5% of those anomalies come from a random user
+random_user_anomaly_share: 0.05

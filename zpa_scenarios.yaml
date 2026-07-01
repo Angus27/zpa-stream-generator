@@ -1,0 +1,77 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ZPA Stream Generator — timed anomaly SPIKE scenarios
+# ─────────────────────────────────────────────────────────────────────────────
+# HOT-RELOADED while streaming (same cadence as zpa_rates.yaml — default 10s).
+#
+# Each scenario temporarily OVERRIDES rate/anomaly values from zpa_rates.yaml for
+# a scheduled window, then automatically reverts. Use them to drive timed anomaly
+# spikes that trip detection rules on a predictable schedule.
+#
+# When two scenarios overlap, the HIGHER value wins for each key.
+#
+# schedule.type:
+#   relative : start = offset after the stream starts     (start, duration)
+#   every    : recurring window                           (period, duration, offset)
+#   at       : wall-clock time, local                     (start "HH:MM"/ISO, duration)
+# durations/offsets accept  "90s"  "5m"  "1h"  "1h30m"  or a plain number of seconds.
+#
+# spikes: any subset of the zpa_rates.yaml structure
+#   (event_rate / activity_anomaly_rates / status_anomaly_rates / random_user_anomaly_share)
+#
+# Set enabled: true to arm a scenario. Preview with:
+#   python zpa_stream_generator.py --list-scenarios
+# ─────────────────────────────────────────────────────────────────────────────
+
+scenarios:
+
+  # Insider-threat burst: heavy over-privileged + cross-segment access,
+  # starting 9 minutes after the stream starts, lasting 3 minutes.
+  - name: insider-threat-burst
+    enabled: true
+    schedule:
+      type: relative
+      start: 1m
+      duration: 3m
+    spikes:
+      activity_anomaly_rates:
+        over_privileged: 0.35
+        cross_segment:   0.20
+      random_user_anomaly_share: 0.0      # keep the spike pinned to the flagged offenders
+
+  # Credential-stuffing wave: recurring auth-failure spike every 10 minutes for
+  # 60 seconds, with a higher status event rate during the wave.
+  - name: auth-failure-wave
+    enabled: false
+    schedule:
+      type: every
+      period: 10m
+      duration: 60s
+      offset: 0s
+    spikes:
+      event_rate:
+        status_per_minute: 180
+      status_anomaly_rates:
+        auth_failure: 0.40
+
+  # Dormant-segment probe at a fixed local time (e.g. overnight) for 5 minutes.
+  - name: overnight-dormant-probe
+    enabled: false
+    schedule:
+      type: at
+      start: "02:30"
+      duration: 5m
+    spikes:
+      activity_anomaly_rates:
+        dormant_segment: 0.30
+
+  # Pure volume surge (no extra anomalies) for load testing, 30s in for 90s.
+  - name: traffic-surge
+    enabled: false
+    schedule:
+      type: relative
+      start: 30s
+      duration: 90s
+    spikes:
+      event_rate:
+        activity_per_minute: 1200
+        status_per_minute:   300

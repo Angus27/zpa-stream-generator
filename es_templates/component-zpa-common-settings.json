@@ -1,0 +1,121 @@
+{
+  "template": {
+    "settings": {
+      "index": {
+        "number_of_shards": 1,
+        "number_of_replicas": 1,
+        "codec": "best_compression"
+      }
+    },
+    "mappings": {
+      "dynamic": true,
+      "properties": {
+        "@timestamp": { "type": "date" },
+        "ecs":  { "properties": { "version": { "type": "keyword" } } },
+        "message": { "type": "match_only_text" },
+        "tags": { "type": "keyword" },
+        "event": {
+          "properties": {
+            "kind":     { "type": "keyword" },
+            "category": { "type": "keyword" },
+            "type":     { "type": "keyword" },
+            "action":   { "type": "keyword" },
+            "outcome":  { "type": "keyword" },
+            "id":       { "type": "keyword" },
+            "dataset":  { "type": "keyword" },
+            "module":   { "type": "keyword" },
+            "duration": { "type": "long" }
+          }
+        },
+        "user": {
+          "properties": {
+            "id":     { "type": "keyword" },
+            "name":   { "type": "keyword" },
+            "email":  { "type": "keyword" },
+            "domain": { "type": "keyword" },
+            "roles":  { "type": "keyword" },
+            "group":  { "properties": { "name": { "type": "keyword" } } }
+          }
+        },
+        "source": {
+          "properties": {
+            "ip":    { "type": "ip" },
+            "bytes": { "type": "long" }
+          }
+        },
+        "host": {
+          "properties": {
+            "name": { "type": "keyword" },
+            "ip":   { "type": "ip" },
+            "os": {
+              "properties": {
+                "name": { "type": "keyword" },
+                "full": { "type": "keyword" }
+              }
+            }
+          }
+        },
+        "observer": {
+          "properties": {
+            "name":   { "type": "keyword" },
+            "ip":     { "type": "ip" },
+            "type":   { "type": "keyword" },
+            "vendor": { "type": "keyword" }
+          }
+        },
+        "agent": {
+          "properties": {
+            "name":    { "type": "keyword" },
+            "version": { "type": "keyword" }
+          }
+        },
+        "zpa": {
+          "properties": {
+            "department":    { "type": "keyword" },
+            "cloud":         { "type": "keyword" },
+            "policy_action": { "type": "keyword" },
+            "connector": {
+              "properties": {
+                "group": { "type": "keyword" },
+                "ip":    { "type": "ip" }
+              }
+            },
+            "idp": {
+              "properties": {
+                "provider": { "type": "keyword" },
+                "group":    { "type": "keyword" }
+              }
+            },
+            "posture": {
+              "properties": {
+                "check":  { "type": "keyword" },
+                "status": { "type": "keyword" }
+              }
+            },
+            "session": {
+              "properties": {
+                "id":               { "type": "keyword" },
+                "duration_seconds": { "type": "long" }
+              }
+            },
+            "anomaly": {
+              "properties": {
+                "is_anomalous": { "type": "boolean" },
+                "flag":         { "type": "keyword" },
+                "detail": {
+                  "type": "text",
+                  "fields": { "keyword": { "type": "keyword", "ignore_above": 1024 } }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "_meta": {
+    "description": "Shared settings and common ECS fields for ZPA data streams",
+    "managed_by": "zpa_stream_generator"
+  },
+  "version": 1
+}

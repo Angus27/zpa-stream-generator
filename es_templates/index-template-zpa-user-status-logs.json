@@ -1,0 +1,11 @@
+{
+  "index_patterns": ["zpa-user-status-logs"],
+  "data_stream": {},
+  "composed_of": ["zpa-common-settings", "zpa-status-mappings"],
+  "priority": 500,
+  "_meta": {
+    "description": "Index template backing the zpa-user-status-logs data stream",
+    "managed_by": "zpa_stream_generator"
+  },
+  "version": 1
+}

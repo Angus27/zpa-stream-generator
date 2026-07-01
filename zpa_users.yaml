@@ -1,0 +1,732 @@
+# ─────────────────────────────────────────────────────────────────────
+# ZPA synthetic user pool — HOT-RELOADED while streaming.
+# Add or remove users any time; changes take effect within
+# streaming.reload_interval_seconds (default 10s). No restart needed.
+#
+# behaviour flags:
+#   over_privileged: occasionally accesses segments outside their role
+#                    (primary source of OVER_PRIVILEGED anomalies)
+#   ghost:           authenticates but never opens application sessions
+#                    (primary source of GHOST_USER anomalies)
+# ─────────────────────────────────────────────────────────────────────
+users:
+- user_id: u0001
+  username: cchen
+  email: cchen@telco-corp.internal
+  display: Chris Chen
+  role: noc_engineer
+  department: NOC
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0002
+  username: kjones
+  email: kjones@telco-corp.internal
+  display: Kate Jones
+  role: finance_analyst
+  department: Finance
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0003
+  username: emacdonald
+  email: emacdonald@telco-corp.internal
+  display: Emma MacDonald
+  role: bss_analyst
+  department: BSS
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0004
+  username: hkowalski
+  email: hkowalski@telco-corp.internal
+  display: Helen Kowalski
+  role: ciso
+  department: Security
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0005
+  username: mmurphy
+  email: mmurphy@telco-corp.internal
+  display: Mohammed Murphy
+  role: sre
+  department: DevOps
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0006
+  username: swilliams
+  email: swilliams@telco-corp.internal
+  display: Sarah Williams
+  role: oss_engineer
+  department: OSS
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0007
+  username: dkumar
+  email: dkumar@telco-corp.internal
+  display: David Kumar
+  role: soc_manager
+  department: Security
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0008
+  username: fwilliams
+  email: fwilliams@telco-corp.internal
+  display: Fatima Williams
+  role: ciso
+  department: Security
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0009
+  username: dfernandez
+  email: dfernandez@telco-corp.internal
+  display: David Fernandez
+  role: api_dev
+  department: Commercial
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0010
+  username: aali
+  email: aali@telco-corp.internal
+  display: Arjun Ali
+  role: sre
+  department: DevOps
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0011
+  username: ewalsh
+  email: ewalsh@telco-corp.internal
+  display: Emma Walsh
+  role: infra_manager
+  department: Infra
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0012
+  username: "km\xFCller"
+  email: "km\xFCller@telco-corp.internal"
+  display: "Kofi M\xFCller"
+  role: noc_engineer
+  department: NOC
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0013
+  username: "rm\xFCller"
+  email: "rm\xFCller@telco-corp.internal"
+  display: "Ryan M\xFCller"
+  role: ot_engineer
+  department: OT
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0014
+  username: ankosi
+  email: ankosi@telco-corp.internal
+  display: Arjun Nkosi
+  role: hr_manager
+  department: HR
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0015
+  username: kmacdonald
+  email: kmacdonald@telco-corp.internal
+  display: Kofi MacDonald
+  role: ot_manager
+  department: OT
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0016
+  username: rschmidt
+  email: rschmidt@telco-corp.internal
+  display: Ryan Schmidt
+  role: bss_analyst
+  department: BSS
+  behaviour:
+    over_privileged: false
+    ghost: true
+- user_id: u0017
+  username: mlewis
+  email: mlewis@telco-corp.internal
+  display: Mohammed Lewis
+  role: bss_analyst
+  department: BSS
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0018
+  username: cadeyemi
+  email: cadeyemi@telco-corp.internal
+  display: Claire Adeyemi
+  role: wholesale_mgr
+  department: Commercial
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0019
+  username: "km\xFCller"
+  email: "km\xFCller@telco-corp.internal"
+  display: "Kofi M\xFCller"
+  role: noc_manager
+  department: NOC
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0020
+  username: kwalsh
+  email: kwalsh@telco-corp.internal
+  display: Kate Walsh
+  role: ciso
+  department: Security
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0021
+  username: plewis
+  email: plewis@telco-corp.internal
+  display: Priya Lewis
+  role: oss_engineer
+  department: OSS
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0022
+  username: zbrennan
+  email: zbrennan@telco-corp.internal
+  display: Zara Brennan
+  role: api_dev
+  department: Commercial
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0023
+  username: fadeyemi
+  email: fadeyemi@telco-corp.internal
+  display: Fatima Adeyemi
+  role: infra_manager
+  department: Infra
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0024
+  username: dfernandez
+  email: dfernandez@telco-corp.internal
+  display: David Fernandez
+  role: oss_engineer
+  department: OSS
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0025
+  username: sobrien
+  email: sobrien@telco-corp.internal
+  display: Sarah O'Brien
+  role: finance_analyst
+  department: Finance
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0026
+  username: rbrennan
+  email: rbrennan@telco-corp.internal
+  display: Ryan Brennan
+  role: oss_engineer
+  department: OSS
+  behaviour:
+    over_privileged: true
+    ghost: false
+- user_id: u0027
+  username: akumar
+  email: akumar@telco-corp.internal
+  display: Anna Kumar
+  role: bss_analyst
+  department: BSS
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0028
+  username: sjones
+  email: sjones@telco-corp.internal
+  display: Stefan Jones
+  role: dev_lead
+  department: DevOps
+  behaviour:
+    over_privileged: true
+    ghost: false
+- user_id: u0029
+  username: cosei
+  email: cosei@telco-corp.internal
+  display: Chris Osei
+  role: hrbp
+  department: HR
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0030
+  username: aadeyemi
+  email: aadeyemi@telco-corp.internal
+  display: Aisha Adeyemi
+  role: hrbp
+  department: HR
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0031
+  username: dobrien
+  email: dobrien@telco-corp.internal
+  display: David O'Brien
+  role: finance_manager
+  department: Finance
+  behaviour:
+    over_privileged: false
+    ghost: true
+- user_id: u0032
+  username: aobrien
+  email: aobrien@telco-corp.internal
+  display: Arjun O'Brien
+  role: api_dev
+  department: Commercial
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0033
+  username: mthompson
+  email: mthompson@telco-corp.internal
+  display: Mohammed Thompson
+  role: api_dev
+  department: Commercial
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0034
+  username: aali
+  email: aali@telco-corp.internal
+  display: Aisha Ali
+  role: finance_analyst
+  department: Finance
+  behaviour:
+    over_privileged: false
+    ghost: true
+- user_id: u0035
+  username: awalsh
+  email: awalsh@telco-corp.internal
+  display: Aisha Walsh
+  role: devops_engineer
+  department: DevOps
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0036
+  username: ktan
+  email: ktan@telco-corp.internal
+  display: Kofi Tan
+  role: ciso
+  department: Security
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0037
+  username: eobrien
+  email: eobrien@telco-corp.internal
+  display: Emma O'Brien
+  role: hr_manager
+  department: HR
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0038
+  username: sahmed
+  email: sahmed@telco-corp.internal
+  display: Sean Ahmed
+  role: noc_manager
+  department: NOC
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0039
+  username: eosei
+  email: eosei@telco-corp.internal
+  display: Emma Osei
+  role: noc_manager
+  department: NOC
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0040
+  username: bschmidt
+  email: bschmidt@telco-corp.internal
+  display: Blessing Schmidt
+  role: devops_engineer
+  department: DevOps
+  behaviour:
+    over_privileged: true
+    ghost: false
+- user_id: u0041
+  username: kpatel
+  email: kpatel@telco-corp.internal
+  display: Kofi Patel
+  role: ot_manager
+  department: OT
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0042
+  username: mmurphy
+  email: mmurphy@telco-corp.internal
+  display: Mei Murphy
+  role: hr_manager
+  department: HR
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0043
+  username: dtan
+  email: dtan@telco-corp.internal
+  display: David Tan
+  role: soc_analyst
+  department: Security
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0044
+  username: stan
+  email: stan@telco-corp.internal
+  display: Stefan Tan
+  role: dev_lead
+  department: DevOps
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0045
+  username: tjones
+  email: tjones@telco-corp.internal
+  display: Tom Jones
+  role: bss_manager
+  department: BSS
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0046
+  username: ekowalski
+  email: ekowalski@telco-corp.internal
+  display: Emma Kowalski
+  role: ciso
+  department: Security
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0047
+  username: zjones
+  email: zjones@telco-corp.internal
+  display: Zara Jones
+  role: infra_manager
+  department: Infra
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0048
+  username: ymurphy
+  email: ymurphy@telco-corp.internal
+  display: Yemi Murphy
+  role: devops_engineer
+  department: DevOps
+  behaviour:
+    over_privileged: true
+    ghost: false
+- user_id: u0049
+  username: ckumar
+  email: ckumar@telco-corp.internal
+  display: Claire Kumar
+  role: bss_manager
+  department: BSS
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0050
+  username: osharma
+  email: osharma@telco-corp.internal
+  display: Oliver Sharma
+  role: oss_engineer
+  department: OSS
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0051
+  username: rokafor
+  email: rokafor@telco-corp.internal
+  display: Ryan Okafor
+  role: bss_analyst
+  department: BSS
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0052
+  username: ttan
+  email: ttan@telco-corp.internal
+  display: Tom Tan
+  role: ot_engineer
+  department: OT
+  behaviour:
+    over_privileged: true
+    ghost: false
+- user_id: u0053
+  username: bobrien
+  email: bobrien@telco-corp.internal
+  display: Blessing O'Brien
+  role: sre
+  department: DevOps
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0054
+  username: fpatel
+  email: fpatel@telco-corp.internal
+  display: Fatima Patel
+  role: devops_engineer
+  department: DevOps
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0055
+  username: sthompson
+  email: sthompson@telco-corp.internal
+  display: Stefan Thompson
+  role: dev_lead
+  department: DevOps
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0056
+  username: ojones
+  email: ojones@telco-corp.internal
+  display: Oliver Jones
+  role: ciso
+  department: Security
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0057
+  username: awilliams
+  email: awilliams@telco-corp.internal
+  display: Anna Williams
+  role: cfo
+  department: Finance
+  behaviour:
+    over_privileged: true
+    ghost: false
+- user_id: u0058
+  username: kchen
+  email: kchen@telco-corp.internal
+  display: Kate Chen
+  role: cfo
+  department: Finance
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0059
+  username: tali
+  email: tali@telco-corp.internal
+  display: Tariq Ali
+  role: finance_manager
+  department: Finance
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0060
+  username: rtan
+  email: rtan@telco-corp.internal
+  display: Ryan Tan
+  role: hr_manager
+  department: HR
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0061
+  username: pbrennan
+  email: pbrennan@telco-corp.internal
+  display: Priya Brennan
+  role: sre
+  department: DevOps
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0062
+  username: awalsh
+  email: awalsh@telco-corp.internal
+  display: Aisha Walsh
+  role: noc_engineer
+  department: NOC
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0063
+  username: kkowalski
+  email: kkowalski@telco-corp.internal
+  display: Kate Kowalski
+  role: finance_manager
+  department: Finance
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0064
+  username: oahmed
+  email: oahmed@telco-corp.internal
+  display: Oliver Ahmed
+  role: ot_engineer
+  department: OT
+  behaviour:
+    over_privileged: false
+    ghost: true
+- user_id: u0065
+  username: ochen
+  email: ochen@telco-corp.internal
+  display: Oliver Chen
+  role: api_dev
+  department: Commercial
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0066
+  username: losei
+  email: losei@telco-corp.internal
+  display: Lena Osei
+  role: api_dev
+  department: Commercial
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0067
+  username: othompson
+  email: othompson@telco-corp.internal
+  display: Oliver Thompson
+  role: ot_manager
+  department: OT
+  behaviour:
+    over_privileged: true
+    ghost: false
+- user_id: u0068
+  username: tadeyemi
+  email: tadeyemi@telco-corp.internal
+  display: Tom Adeyemi
+  role: ot_engineer
+  department: OT
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0069
+  username: zahmed
+  email: zahmed@telco-corp.internal
+  display: Zara Ahmed
+  role: soc_manager
+  department: Security
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0070
+  username: mwilliams
+  email: mwilliams@telco-corp.internal
+  display: Mei Williams
+  role: wholesale_mgr
+  department: Commercial
+  behaviour:
+    over_privileged: true
+    ghost: false
+- user_id: u0071
+  username: rsharma
+  email: rsharma@telco-corp.internal
+  display: Ravi Sharma
+  role: noc_engineer
+  department: NOC
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0072
+  username: padeyemi
+  email: padeyemi@telco-corp.internal
+  display: Priya Adeyemi
+  role: hr_analyst
+  department: HR
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0073
+  username: eokafor
+  email: eokafor@telco-corp.internal
+  display: Emma Okafor
+  role: finance_analyst
+  department: Finance
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0074
+  username: tmurphy
+  email: tmurphy@telco-corp.internal
+  display: Tariq Murphy
+  role: oss_engineer
+  department: OSS
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0075
+  username: mkowalski
+  email: mkowalski@telco-corp.internal
+  display: Mohammed Kowalski
+  role: soc_analyst
+  department: Security
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0076
+  username: spatel
+  email: spatel@telco-corp.internal
+  display: Sean Patel
+  role: ciso
+  department: Security
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0077
+  username: rmacdonald
+  email: rmacdonald@telco-corp.internal
+  display: Ryan MacDonald
+  role: bss_manager
+  department: BSS
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0078
+  username: hsharma
+  email: hsharma@telco-corp.internal
+  display: Helen Sharma
+  role: ciso
+  department: Security
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0079
+  username: ajones
+  email: ajones@telco-corp.internal
+  display: Aisha Jones
+  role: soc_manager
+  department: Security
+  behaviour:
+    over_privileged: false
+    ghost: false
+- user_id: u0080
+  username: athompson
+  email: athompson@telco-corp.internal
+  display: Anna Thompson
+  role: sre
+  department: DevOps
+  behaviour:
+    over_privileged: false
+    ghost: false
