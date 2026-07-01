@@ -11,6 +11,8 @@ Elasticsearch **data streams** as ECS-mapped documents.
 | `zpa-user-activity-logs` | per-connection records (segment, app, bytes, policy action) |
 | `zpa-user-status-logs` | session lifecycle events (auth, tunnel, posture, idle) |
 
+Also see the ZPA_DETECTION_LAB_GUIDE.md for real-world Agent Builder use cases.
+
 ---
 
 ## How it works
