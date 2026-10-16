@@ -22,17 +22,19 @@ event_rate:
 # Keep the total well under 1.0. Raise a value to make that anomaly fire more
 # often (e.g. to reliably trip a detection rule during a demo).
 activity_anomaly_rates:
-  over_privileged:  0.020       # user hits a segment outside their role
-  cross_segment:    0.010       # sensitive role -> segment crossing (cross_segment_rules)
-  dormant_segment:  0.004       # traffic to a segment marked dormant
-  access_denied:    0.015       # policy-denied access attempt
+  over_privileged:  0.005       # user hits a segment outside their role
+  cross_segment:    0.002       # sensitive role -> segment crossing (cross_segment_rules)
+  dormant_segment:  0.001       # traffic to a segment marked dormant
+  access_denied:    0.005       # policy-denied access attempt
+  connector_outage: 0.000       # sessions fail: connector group down (see connector_outage_group)
 
 # ── Status anomaly rates ───────────────────────────────────────────────────────
 # Probability that any single STATUS event is of the given anomalous type.
 status_anomaly_rates:
-  ghost_user:   0.010           # auth/token activity with no application sessions
-  auth_failure: 0.020           # ZPA_AUTH_FAILURE (raise for brute-force-style bursts)
-  posture_fail: 0.030           # ZPA_POSTURE_FAIL
+  ghost_user:   0.005           # auth/token activity with no application sessions
+  auth_failure: 0.010           # ZPA_AUTH_FAILURE (raise for brute-force-style bursts)
+  posture_fail: 0.010           # ZPA_POSTURE_FAIL
+  connector_down: 0.000         # ZPA_CONNECTOR_DOWN for connector_outage_group
 
 # ── Hybrid anomaly attribution ─────────────────────────────────────────────────
 # Anomalies are normally attributed to the FLAGGED user population
@@ -43,3 +45,8 @@ status_anomaly_rates:
 #   0.0  = anomalies always come from flagged users only
 #   0.05 = ~5% of those anomalies come from a random user
 random_user_anomaly_share: 0.05
+
+# ── Connector outage target ────────────────────────────────────────────────────
+# Which connector group the connector_outage / connector_down rates hit.
+# Falls back to the first group in the config if unset or unknown.
+connector_outage_group: CG-OT-BRISTOL

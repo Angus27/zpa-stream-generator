@@ -290,22 +290,23 @@ def _app_host(seg_name, seg_cfg, domain, max_apps):
 
 
 def activity_doc(conf, user, seg_name, seg_cfg, connector_groups,
-                 action="Allow", anomaly_flag="", anomaly_detail=""):
+                 action="Allow", anomaly_flag="", anomaly_detail="", outage_cg=None):
     domain = cfg(conf, "organisation", "internal_domain", default="corp.internal")
     max_apps = cfg(conf, "session", "apps_per_segment", default=6)
-    cg = seg_cfg.get("connector_group", next(iter(connector_groups), "CG-DEFAULT"))
+    cg = outage_cg or seg_cfg.get("connector_group", next(iter(connector_groups), "CG-DEFAULT"))
     cg_ips = connector_groups.get(cg, ["10.0.0.1"])
     connector_ip = random.choice(cg_ips)
     host, port = _app_host(seg_name, seg_cfg, domain, max_apps)
 
     denied = action == "Deny"
-    dur = 0 if denied else random.randint(
+    failed = denied or bool(outage_cg)      # no session established either way
+    dur = 0 if failed else random.randint(
         cfg(conf, "session", "duration_min_s", default=5),
         cfg(conf, "session", "duration_max_s", default=3600))
-    btx = 0 if denied else random.randint(
+    btx = 0 if failed else random.randint(
         cfg(conf, "session", "bytes_tx_min", default=1024),
         cfg(conf, "session", "bytes_tx_max", default=5242880))
-    brx = 0 if denied else random.randint(
+    brx = 0 if failed else random.randint(
         cfg(conf, "session", "bytes_rx_min", default=512),
         cfg(conf, "session", "bytes_rx_max", default=2097152))
     posture = "Fail" if random.random() < cfg(conf, "session", "posture_fail_rate", default=0.15) else "Pass"
@@ -328,14 +329,22 @@ def activity_doc(conf, user, seg_name, seg_cfg, connector_groups,
     return {
         "@timestamp": now_iso(),
         "ecs": {"version": ECS_VERSION},
+        # free text so Streams (Knowledge Indicators / rule generation) has content to read;
+        # deliberately omits the anomaly flag so blind runs stay blind
+        "message": (f"ZPA connection failed: no healthy connector in group {cg} for "
+                    f"{host}:{port} (user {user['username']}, segment {seg_name})"
+                    if outage_cg else
+                    f"ZPA policy {'denied' if denied else 'allowed'} access: user "
+                    f"{user['username']} ({user.get('role')}) -> {host}:{port} "
+                    f"[segment {seg_name}, connector group {cg}]"),
         "event": {
             "kind": "event",
             "module": "zpa",
             "dataset": "zpa.activity",
             "category": ["network"],
-            "type": ["access", "allowed" if not denied else "denied"],
-            "action": "allow" if not denied else "deny",
-            "outcome": "success" if not denied else "failure",
+            "type": ["access", "error" if outage_cg else ("denied" if denied else "allowed")],
+            "action": ("connection_failed" if outage_cg else "deny" if denied else "allow"),
+            "outcome": "failure" if failed else "success",
         },
         "user": {
             "id": user["user_id"],
@@ -357,16 +366,17 @@ def activity_doc(conf, user, seg_name, seg_cfg, connector_groups,
 _STATUS_CATEGORY = {
     "ZPA_AUTH_SUCCESS": "authentication", "ZPA_AUTH_FAILURE": "authentication",
     "ZPA_IDP_TOKEN_REFRESH": "authentication", "ZPA_POSTURE_FAIL": "authentication",
+    "ZPA_CONNECTOR_DOWN": "network",
 }
 
 def status_doc(conf, user, event_type, anomaly_flag="", status_detail="",
-               session_duration=None):
+               session_duration=None, connector_group=None):
     domain = cfg(conf, "organisation", "internal_domain", default="corp.internal")
     versions = cfg(conf, "client", "versions", default=["4.2.0"])
     platforms = cfg(conf, "client", "os_platforms", default=["Windows 11"])
     cgs = cfg(conf, "organisation", "connector_groups", default={})
-    cg = random.choice(list(cgs)) if cgs else "CG-DEFAULT"
-    failure = "FAILURE" in event_type or "FAIL" in event_type
+    cg = connector_group or (random.choice(list(cgs)) if cgs else "CG-DEFAULT")
+    failure = "FAILURE" in event_type or "FAIL" in event_type or "CONNECTOR_DOWN" in event_type
     posture = "Fail" if "POSTURE_FAIL" in event_type else "Pass"
     category = _STATUS_CATEGORY.get(event_type, "session")
 
@@ -423,6 +433,12 @@ def pick(seq):
     return random.choice(seq) if seq else None
 
 
+def outage_group(rates, connector_groups):
+    """Connector group currently 'down' (rates.connector_outage_group; first group if unset/unknown)."""
+    g = rates.get("connector_outage_group")
+    return g if g in connector_groups else next(iter(connector_groups), None)
+
+
 def make_activity_event(conf, users, rates, segments, connector_groups,
                         non_dormant, dormant_segs, cross_rules):
     """Decide the next activity event's type + actor and build the ECS doc."""
@@ -477,6 +493,18 @@ def make_activity_event(conf, users, rates, segments, connector_groups,
                 anomaly_flag="DORMANT_SEGMENT",
                 anomaly_detail=f"{seg} is dormant; policy not reviewed in >90 days"))
 
+    # --- Connector outage: sessions to the downed group's segments fail ------
+    cum += ar.get("connector_outage", 0.0)
+    if roll < cum:
+        cg = outage_group(rates, connector_groups)
+        segs = [s for s in non_dormant if segments[s].get("connector_group") == cg]
+        user = pick(users["active"])
+        if cg and segs and user:
+            return ("activity", activity_doc(
+                conf, user, pick(segs), segments[pick(segs)], connector_groups,
+                anomaly_flag="CONNECTOR_OUTAGE", outage_cg=cg,
+                anomaly_detail=f"Connector group {cg} unreachable; sessions failing"))
+
     # --- Access denied -----------------------------------------------------
     cum += ar.get("access_denied", 0.0)
     if roll < cum:
@@ -512,7 +540,18 @@ def make_status_event(conf, users, rates):
     wildcard = float(rates.get("random_user_anomaly_share", 0.0) or 0.0)
     roll = random.random()
 
-    cum = sr.get("ghost_user", 0.0)
+    cum = sr.get("connector_down", 0.0)
+    if roll < cum:
+        cgs = cfg(conf, "organisation", "connector_groups", default={})
+        cg = outage_group(rates, cgs)
+        user = pick(users["active"]) or pick(users["all"])
+        if cg and user:
+            return ("status", status_doc(
+                conf, user, "ZPA_CONNECTOR_DOWN", anomaly_flag="CONNECTOR_OUTAGE",
+                connector_group=cg,
+                status_detail=f"Connector group {cg} unreachable: all connectors failed health check"))
+
+    cum += sr.get("ghost_user", 0.0)
     if roll < cum:
         if users["ghost"] and random.random() >= wildcard:
             user = pick(users["ghost"])

@@ -114,6 +114,14 @@ Then, in Kibana → Streams → `logs.ecs`:
 
 Check ingest with ES|QL: `FROM logs.ecs* | STATS count() BY event.dataset`.
 
+**Significant Events scenarios.** [zpa_scenarios.yaml](zpa_scenarios.yaml) holds
+sustained (20 min, starting 30 min in) shifts designed for the Significant
+Events change-point detector. `connector-outage` takes one connector group
+(`connector_outage_group` in `zpa_rates.yaml`) down: status gets
+`ZPA_CONNECTOR_DOWN` events and activity gets failed sessions
+(`event.action: connection_failed`) for that group's segments, so the same
+incident shows up in both streams.
+
 ### 4. Stream
 
 ```bash

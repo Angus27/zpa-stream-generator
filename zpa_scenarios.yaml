@@ -4,8 +4,7 @@
 # HOT-RELOADED while streaming (same cadence as zpa_rates.yaml — default 10s).
 #
 # Each scenario temporarily OVERRIDES rate/anomaly values from zpa_rates.yaml for
-# a scheduled window, then automatically reverts. Use them to drive timed anomaly
-# spikes that trip detection rules on a predictable schedule.
+# a scheduled window, then automatically reverts.
 #
 # When two scenarios overlap, the HIGHER value wins for each key.
 #
@@ -18,76 +17,140 @@
 # spikes: any subset of the zpa_rates.yaml structure
 #   (event_rate / activity_anomaly_rates / status_anomaly_rates / random_user_anomaly_share)
 #
-# Set enabled: true to arm a scenario. Preview with:
-#   python zpa_stream_generator.py --list-scenarios
+# Preview with:  python zpa_stream_generator.py --list-scenarios
+#
+# ── Designed for Streams SIGNIFICANT EVENTS ──────────────────────────────────
+# Rules run every 5 min (7 min lookback); a change-point test then looks for a
+# statistically significant shift in each rule's match counts. So:
+#   • let a QUIET BASELINE run first (>= 30m) — see zpa_rates.yaml "demo" values
+#   • make the shift SUSTAINED (>= 15m, i.e. several 5-min buckets)
+#   • keep scenarios `relative` so every run replays the same timeline
+# Enable ONE at a time, or just the "correlated" pair, to keep the story clear.
+# Timeline (minutes after start):   0 ─ 30 baseline ─ 30 shift ─ 50 recover
 # ─────────────────────────────────────────────────────────────────────────────
 
 scenarios:
 
-  # Insider-threat burst: heavy over-privileged + cross-segment access,
-  # starting 9 minutes after the stream starts, lasting 3 minutes.
-  - name: insider-threat-burst
+  # 1. Credential-stuffing / brute force — status stream.
+  #    Auth failures jump from ~1% to 40% on 4x the status volume.
+  - name: credential-stuffing
     enabled: true
     schedule:
       type: relative
-      start: 1m
-      duration: 3m
-    spikes:
-      activity_anomaly_rates:
-        over_privileged: 0.35
-        cross_segment:   0.20
-      random_user_anomaly_share: 0.0      # keep the spike pinned to the flagged offenders
-
-  # Credential-stuffing wave: recurring auth-failure spike every 10 minutes for
-  # 60 seconds, with a higher status event rate during the wave.
-  - name: auth-failure-wave
-    enabled: false
-    schedule:
-      type: every
-      period: 10m
-      duration: 60s
-      offset: 0s
+      start: 30m
+      duration: 20m
     spikes:
       event_rate:
-        status_per_minute: 180
+        status_per_minute: 120
       status_anomaly_rates:
         auth_failure: 0.40
 
-  # Dormant-segment probe at a fixed local time (e.g. overnight) for 5 minutes.
-  - name: overnight-dormant-probe
+  # 2. Insider threat — activity stream.
+  #    Flagged over-privileged users reach outside their role, plus cross-segment hops.
+  - name: insider-threat
     enabled: false
     schedule:
-      type: at
-      start: "02:30"
-      duration: 5m
+      type: relative
+      start: 30m
+      duration: 20m
     spikes:
       activity_anomaly_rates:
-        dormant_segment: 0.30
+        over_privileged: 0.30
+        cross_segment:   0.15
+      random_user_anomaly_share: 0.0      # pin to the flagged offenders
 
-  # Pure volume surge (no extra anomalies) for load testing, 30s in for 90s.
+  # 3. Policy-denied storm — activity stream. Heavy denied access from many users,
+  #    e.g. a policy change or a lateral-movement sweep.
+  - name: access-denied-storm
+    enabled: false
+    schedule:
+      type: relative
+      start: 30m
+      duration: 20m
+    spikes:
+      event_rate:
+        activity_per_minute: 300
+      activity_anomaly_rates:
+        access_denied: 0.35
+
+  # 4. Dormant-segment probing — activity stream. Traffic to segments nobody should touch.
+  - name: dormant-segment-probe
+    enabled: false
+    schedule:
+      type: relative
+      start: 30m
+      duration: 20m
+    spikes:
+      activity_anomaly_rates:
+        dormant_segment: 0.25
+
+  # 5. Device-posture collapse — status stream (e.g. bad endpoint update rolled out).
+  - name: posture-failure-wave
+    enabled: false
+    schedule:
+      type: relative
+      start: 30m
+      duration: 20m
+    spikes:
+      status_anomaly_rates:
+        posture_fail: 0.45
+
+  # 6. Correlated incident — credential-stuffing, then the attacker gets in and moves
+  #    laterally. Gives Discovery a cross-stream story: auth failures (status) at +30m
+  #    followed by over-privileged / cross-segment / denied access (activity) at +40m.
+  #    Enable BOTH entries below (and leave 1–5 off).
+  - name: incident-phase1-auth-attack
+    enabled: false
+    schedule:
+      type: relative
+      start: 30m
+      duration: 25m
+    spikes:
+      event_rate:
+        status_per_minute: 120
+      status_anomaly_rates:
+        auth_failure: 0.40
+
+  - name: incident-phase2-lateral-movement
+    enabled: false
+    schedule:
+      type: relative
+      start: 40m
+      duration: 20m
+    spikes:
+      event_rate:
+        activity_per_minute: 240
+      activity_anomaly_rates:
+        over_privileged: 0.30
+        cross_segment:   0.15
+        access_denied:   0.20
+      random_user_anomaly_share: 0.0
+
+  # 7. Connector outage — ONE connector group goes down. Hits BOTH streams at once:
+  #    status gets ZPA_CONNECTOR_DOWN events, activity gets failed sessions
+  #    (event.action: connection_failed) for every segment served by that group.
+  #    Target group is connector_outage_group in zpa_rates.yaml.
+  - name: connector-outage
+    enabled: false
+    schedule:
+      type: relative
+      start: 30m
+      duration: 20m
+    spikes:
+      activity_anomaly_rates:
+        connector_outage: 0.25
+      status_anomaly_rates:
+        connector_down: 0.25
+      connector_outage_group: CG-OT-BRISTOL
+
+  # Pure volume surge (no extra anomalies) — a "benign" shift for contrast.
   - name: traffic-surge
     enabled: false
     schedule:
       type: relative
-      start: 30s
-      duration: 90s
+      start: 30m
+      duration: 20m
     spikes:
       event_rate:
-        activity_per_minute: 1200
-        status_per_minute:   300
-
-  # Credential-stuffing attach: auth-failure spike
-  # 60 seconds, with a higher status event rate during the wave.
-  - name: auth-failure-wave
-    enabled: true
-    schedule:
-      type: at
-      start: "14:25"
-      duration: 132s
-    spikes:
-      event_rate:
-        status_per_minute: 225
-      status_anomaly_rates:
-        auth_failure: 0.53
-
-
+        activity_per_minute: 600
+        status_per_minute:   150
