@@ -96,6 +96,24 @@ This applies the three component templates and two index templates from
 python zpa_stream_generator.py --setup --recreate
 ```
 
+#### Wired Streams mode (Elastic Streams, Stack 9.4+)
+
+Set `elasticsearch.mode: wired` (and `wired_stream: logs.ecs`) in the config. No
+OTel is needed: events are bulk-`create`d straight into the `logs.ecs` wired
+root, which keeps the ECS field names. `--setup` then enables the root stream
+(same as `elastic stack es streams logs-enable --name logs.ecs`) and skips the
+templates. `--recreate` is not supported in this mode.
+
+Then, in Kibana → Streams → `logs.ecs`:
+
+1. **Partitioning:** create child streams, e.g. `logs.ecs.zpa-activity`
+   (`event.dataset == zpa.activity`) and `logs.ecs.zpa-status`
+   (`event.dataset == zpa.status`).
+2. **Processing:** add processors to each child.
+3. Add `logs,logs.*` to a data view and the `observability:logSources` setting.
+
+Check ingest with ES|QL: `FROM logs.ecs* | STATS count() BY event.dataset`.
+
 ### 4. Stream
 
 ```bash

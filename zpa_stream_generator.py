@@ -629,6 +629,21 @@ class ESClient:
         else:
             r.raise_for_status()
 
+    def enable_wired_stream(self, name):
+        """Enable a wired streams root (logs / logs.otel / logs.ecs).
+        Same operation as `elastic stack es streams logs-enable --name <name>`."""
+        r = self._req("POST", f"/_streams/{name}/_enable")
+        if r.ok:
+            print(f"[es] wired stream '{name}' enabled")
+            return
+        if r.status_code == 409 or "already" in r.text.lower():
+            print(f"[es] wired stream '{name}' already enabled")
+            return
+        sys.exit(f"[es] could not enable wired stream '{name}' "
+                 f"(HTTP {r.status_code}: {r.text[:200]}).\n"
+                 f"     Enable it manually: elastic stack es streams logs-enable --name {name}\n"
+                 f"     or in Kibana > Streams, then re-run.")
+
     def bulk(self, datastream, docs):
         """Bulk-create docs into a data stream. Returns (indexed, errors)."""
         if not docs:
@@ -660,9 +675,30 @@ class ESClient:
 
 # ─── Setup: templates + data streams ────────────────────────────────────────────
 
+def wired_target(conf):
+    """Return the wired stream root if mode=wired, else None."""
+    if cfg(conf, "elasticsearch", "mode", default="datastreams") != "wired":
+        return None
+    return cfg(conf, "elasticsearch", "wired_stream", default="logs.ecs")
+
+
 def run_setup(conf, recreate=False):
     es = ESClient(conf)
     es.ping()
+
+    wired = wired_target(conf)
+    if wired:
+        if recreate:
+            sys.exit("--recreate is not supported in wired mode; delete streams in Kibana > Streams.")
+        es.enable_wired_stream(wired)
+        print(f"\n[setup] complete — events will be bulk-sent to '{wired}'. Next, in Kibana > Streams:\n"
+              f"  1. Partitioning on '{wired}': create child streams, e.g.\n"
+              f"       {wired}.zpa-activity  where event.dataset == zpa.activity\n"
+              f"       {wired}.zpa-status    where event.dataset == zpa.status\n"
+              f"  2. Processing tab on each child: add your processors.\n"
+              f"  3. Data view / observability:logSources: add 'logs,logs.*'.")
+        return
+
     activity_ds = cfg(conf, "elasticsearch", "datastreams", "activity", default="zpa-user-activity-logs")
     status_ds = cfg(conf, "elasticsearch", "datastreams", "status", default="zpa-user-status-logs")
 
@@ -720,6 +756,9 @@ class Streamer:
 
         self.activity_ds = cfg(conf, "elasticsearch", "datastreams", "activity", default="zpa-user-activity-logs")
         self.status_ds = cfg(conf, "elasticsearch", "datastreams", "status", default="zpa-user-status-logs")
+        self.wired = wired_target(conf)
+        if self.wired:      # both event types go to the wired root; Streams partitions server-side
+            self.activity_ds = self.status_ds = self.wired
         self.bulk_max = cfg(conf, "elasticsearch", "bulk_max_docs", default=500)
         self.flush_interval = cfg(conf, "elasticsearch", "flush_interval_seconds", default=2)
 
@@ -818,6 +857,7 @@ class Streamer:
         armed = [s.get("name") for s in (cfg(self.scenarios.data, "scenarios", default=[]) or [])
                  if isinstance(s, dict) and s.get("enabled", True)]
         print(f"[stream] started{' (DRY RUN)' if self.dry_run else ''} — Ctrl-C to stop")
+        print(f"[stream] mode={'wired -> ' + self.wired if self.wired else 'datastreams'}")
         if not self.include_anomaly_fields:
             print("[stream] BLIND mode — zpa.anomaly.* answer-key fields are NOT being sent")
         if armed:

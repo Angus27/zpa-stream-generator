@@ -75,3 +75,19 @@ scenarios:
       event_rate:
         activity_per_minute: 1200
         status_per_minute:   300
+
+  # Credential-stuffing attach: auth-failure spike
+  # 60 seconds, with a higher status event rate during the wave.
+  - name: auth-failure-wave
+    enabled: true
+    schedule:
+      type: at
+      start: "14:25"
+      duration: 132s
+    spikes:
+      event_rate:
+        status_per_minute: 225
+      status_anomaly_rates:
+        auth_failure: 0.53
+
+

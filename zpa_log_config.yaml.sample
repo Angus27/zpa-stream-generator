@@ -17,6 +17,8 @@ elasticsearch:
   bulk_max_docs:          500           # flush the buffer once it holds this many docs
   flush_interval_seconds: 2             # ...or once this many seconds have elapsed
   request_timeout_seconds: 30
+  mode: datastreams                     # datastreams (classic) | wired (Elastic Streams, Stack 9.4+)
+  wired_stream: "logs.ecs"              # wired root: logs.ecs (keeps ECS names) | logs.otel
   datastreams:
     activity: "zpa-user-activity-logs"
     status:   "zpa-user-status-logs"
